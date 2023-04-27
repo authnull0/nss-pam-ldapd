@@ -458,7 +458,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
   if (rc != PAM_SUCCESS)
     return remap_pam_rc(rc, &cfg);
   /* if service is "passwd" and pwdmod is not allowed alert user */
-  /*if (!strcmp(service, "passwd"))
+  if (!strcmp(service, "passwd"))
   {
     rc = nslcd_request_config_get(pamh, &cfg, NSLCD_CONFIG_PAM_PASSWORD_PROHIBIT_MESSAGE,
                                   &resp);
@@ -471,22 +471,22 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
         pam_error(pamh, "%s", resp.msg);
       return remap_pam_rc(PAM_PERM_DENIED, &cfg);
     }
-  }*/
+  }
   /* prompt the user for a password */
-  /*rc = pam_get_authtok(pamh, PAM_AUTHTOK, (const char **)&passwd, NULL);
+  rc = pam_get_authtok(pamh, PAM_AUTHTOK, (const char **)&passwd, NULL);
   if (rc != PAM_SUCCESS)
   {
     pam_syslog(pamh, LOG_ERR, "failed to get password: %s",
                pam_strerror(pamh, rc));
     return rc;
-  }*/
+  }
   /* check password */
-  /*if (!cfg.nullok && ((passwd == NULL) || (passwd[0] == '\0')))
+  if (!cfg.nullok && ((passwd == NULL) || (passwd[0] == '\0')))
   {
     if (cfg.debug)
       pam_syslog(pamh, LOG_DEBUG, "user has empty password, access denied");
     return PAM_AUTH_ERR;
-  }*/
+  }
   /* do the nslcd request */
   rc = nslcd_request_authc(pamh, &cfg, username, service, ruser, rhost, tty,
                             &resp, &(ctx->saved_authz));
@@ -499,17 +499,23 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
                pam_strerror(pamh, resp.res), username);
     return remap_pam_rc(resp.res, &cfg);
   }
+
+  //if resp.res == PAM_SUCCESS 
+  //Call Curl to make request for DID
+
+  pam_syslog(pamh, LOG_NOTICE, "%s", "Calling DiD Infra");
+
   /* debug log */
   if (cfg.debug)
     pam_syslog(pamh, LOG_DEBUG, "authentication succeeded");
   /* if password change is required, save old password in context */
   if ((ctx->saved_authz.res == PAM_NEW_AUTHTOK_REQD) && (ctx->oldpassword == NULL))
     ctx->oldpassword = strdup(passwd);
-  /* update caller's idea of the user name */
+  /*update caller's idea of the user name */
   if ((resp.msg[0] != '\0') && (strcmp(resp.msg, username) != 0))
   {
     pam_syslog(pamh, LOG_INFO, "username changed from %s to %s",
-               username, resp.msg);
+            username, resp.msg);
     rc = pam_set_item(pamh, PAM_USER, resp.msg);
     /* empty the username in the context to not loose our context */
     if (ctx->username != NULL)
