@@ -1,0 +1,4 @@
+testenv.sh: ERROR: LDAP server ldap://127.0.0.1/ not available for dc=test,dc=tld
+testenv.sh: ERROR: /etc/nslcd.conf: not found
+testenv.sh: ERROR: nslcd not running
+SKIP test_ldapcmds.sh (exit status: 77)

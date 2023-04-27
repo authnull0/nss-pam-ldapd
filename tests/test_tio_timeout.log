@@ -1,0 +1,2 @@
+OK: 0 msec difference (within -100...200 msec)
+PASS test_tio_timeout (exit status: 0)

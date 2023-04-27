@@ -1,0 +1,2 @@
+Pylint not found
+SKIP test_pylint.sh (exit status: 77)

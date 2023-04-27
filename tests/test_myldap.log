@@ -1,0 +1,2 @@
+testenv.sh: ERROR: LDAP server ldap://127.0.0.1/ not available for dc=test,dc=tld
+SKIP test_myldap.sh (exit status: 77)

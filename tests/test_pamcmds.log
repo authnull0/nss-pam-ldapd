@@ -1,0 +1,5 @@
+testenv.sh: ERROR: /etc/nsswitch.conf: no LDAP maps configured
+testenv.sh: ERROR: LDAP server ldap://127.0.0.1/ not available for dc=test,dc=tld
+testenv.sh: ERROR: /etc/nslcd.conf: not found
+testenv.sh: ERROR: nslcd not running
+SKIP test_pamcmds.sh (exit status: 77)

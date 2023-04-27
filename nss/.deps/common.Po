@@ -1,0 +1,5 @@
+common.o: common.c /usr/include/stdc-predef.h ../config.h \
+ /usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h
+/usr/include/stdc-predef.h:
+../config.h:
+/usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h:

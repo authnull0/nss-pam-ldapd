@@ -1,0 +1,11 @@
+test_tio: writing 11 blocks of 400 bytes (4400 total)
+test_tio: reading 400 blocks of 11 bytes (4400 total)
+test_tio: writing 11 blocks of 10240 bytes (112640 total)
+test_tio: reading 1024 blocks of 110 bytes (112640 total)
+test_tio: writing 20 blocks of 5115 bytes (102300 total)
+test_tio: reading 5 blocks of 20460 bytes (102300 total)
+test_tio: test_timeout_reader: trying to read a block of 20 bytes
+test_tio: test_timeout_reader: read 0 blocks of 20 bytes in 1 second(s) (Timer expired)
+test_tio: test_timeout_writer: trying to write 10000 blocks of 20 bytes
+test_tio: test_timeout_writer: written 144 blocks of 20 bytes in 2 second(s) (Timer expired)
+PASS test_tio (exit status: 0)

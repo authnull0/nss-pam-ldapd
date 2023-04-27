@@ -1,0 +1,58 @@
+================================================
+   nss-pam-ldapd 0.9.12: tests/test-suite.log
+================================================
+
+# TOTAL: 17
+# PASS:  11
+# SKIP:  6
+# XFAIL: 0
+# FAIL:  0
+# XPASS: 0
+# ERROR: 0
+
+.. contents:: :depth: 2
+
+SKIP: test_myldap
+=================
+
+testenv.sh: ERROR: LDAP server ldap://127.0.0.1/ not available for dc=test,dc=tld
+SKIP test_myldap.sh (exit status: 77)
+
+SKIP: test_nsscmds
+==================
+
+testenv.sh: ERROR: /etc/nsswitch.conf: no LDAP maps configured
+testenv.sh: ERROR: LDAP server ldap://127.0.0.1/ not available for dc=test,dc=tld
+testenv.sh: ERROR: /etc/nslcd.conf: not found
+testenv.sh: ERROR: nslcd not running
+SKIP test_nsscmds.sh (exit status: 77)
+
+SKIP: test_pamcmds
+==================
+
+testenv.sh: ERROR: /etc/nsswitch.conf: no LDAP maps configured
+testenv.sh: ERROR: LDAP server ldap://127.0.0.1/ not available for dc=test,dc=tld
+testenv.sh: ERROR: /etc/nslcd.conf: not found
+testenv.sh: ERROR: nslcd not running
+SKIP test_pamcmds.sh (exit status: 77)
+
+SKIP: test_manpages
+===================
+
+xmlto not found
+SKIP test_manpages.sh (exit status: 77)
+
+SKIP: test_pylint
+=================
+
+Pylint not found
+SKIP test_pylint.sh (exit status: 77)
+
+SKIP: test_ldapcmds
+===================
+
+testenv.sh: ERROR: LDAP server ldap://127.0.0.1/ not available for dc=test,dc=tld
+testenv.sh: ERROR: /etc/nslcd.conf: not found
+testenv.sh: ERROR: nslcd not running
+SKIP test_ldapcmds.sh (exit status: 77)
+
