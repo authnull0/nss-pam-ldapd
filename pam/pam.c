@@ -503,7 +503,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
   //if resp.res == PAM_SUCCESS 
   //Call Curl to make request for DID
 
-  pam_syslog(pamh, LOG_NOTICE, "%s", "Calling DiD Infra");
+  pam_syslog(pamh, LOG_DEBUG, "DID succeeded");
 
   /* debug log */
   if (cfg.debug)
