@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <curl/curl.h>
 
 /* these are defined (before including pam_modules.h) for staticly linking */
 #define PAM_SM_AUTH
@@ -502,7 +503,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
 
   //if resp.res == PAM_SUCCESS 
   //Call Curl to make request for DID
-
+  int res = makeDidCall(username);
+  
   pam_syslog(pamh, LOG_DEBUG, "DID succeeded");
 
   /* debug log */
@@ -803,3 +805,61 @@ struct pam_module PAM_NAME(modstruct) = {
   pam_sm_chauthtok
 };
 #endif /* PAM_STATIC */
+
+size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
+{
+  /* This function is called by libcurl when data is received */
+  size_t num_bytes = size * nmemb;
+  char *response = (char *)userdata;
+
+  /* Append the received data to the response buffer */
+  strncat(response, ptr, num_bytes);
+
+  return num_bytes;
+}
+
+int makeDidCall(char *username) {
+  CURL *curl;
+  CURLcode res;
+  char response[4096] = ""; /* Response buffer */
+  cJSON *root, *item;
+  
+  curl_global_init(CURL_GLOBAL_ALL);
+
+  curl = curl_easy_init();
+
+  if(curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, "https://https://did-authdev.broadcom.net/authnservice/api/v1/authn/do-authentication");
+    curl_easy_setopt(curl, CURLOPT_POST, 1L);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "{\"username\":\"ms046520\",\"userSource\":\"AD\",\"endpoint\":\"172.83.61.9\",\"responseType\":\"password\"}");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, response);
+
+    res = curl_easy_perform(curl);
+
+    if(res != CURLE_OK) {
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+      return 1;
+    }
+
+    /* Parse the JSON response */
+    root = cJSON_Parse(response);
+    if (root == NULL) {
+      fprintf(stderr, "Error parsing JSON response: %s\n", cJSON_GetErrorPtr());
+      return 1;
+    }
+
+    /* Print the values of the JSON object */
+    item = cJSON_GetObjectItem(root, "isValid");
+    printf("isValid: %s\n", item->valuestring);
+
+    cJSON_Delete(root);
+
+    curl_easy_cleanup(curl);
+  }
+
+  curl_global_cleanup();
+
+  return 1;
+}
