@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <curl/curl.h>
 
 /* these are defined (before including pam_modules.h) for staticly linking */
 #define PAM_SM_AUTH
@@ -458,7 +459,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
   if (rc != PAM_SUCCESS)
     return remap_pam_rc(rc, &cfg);
   /* if service is "passwd" and pwdmod is not allowed alert user */
-  /*if (!strcmp(service, "passwd"))
+  if (!strcmp(service, "passwd"))
   {
     rc = nslcd_request_config_get(pamh, &cfg, NSLCD_CONFIG_PAM_PASSWORD_PROHIBIT_MESSAGE,
                                   &resp);
@@ -471,22 +472,22 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
         pam_error(pamh, "%s", resp.msg);
       return remap_pam_rc(PAM_PERM_DENIED, &cfg);
     }
-  }*/
+  }
   /* prompt the user for a password */
-  /*rc = pam_get_authtok(pamh, PAM_AUTHTOK, (const char **)&passwd, NULL);
+  rc = pam_get_authtok(pamh, PAM_AUTHTOK, (const char **)&passwd, NULL);
   if (rc != PAM_SUCCESS)
   {
     pam_syslog(pamh, LOG_ERR, "failed to get password: %s",
                pam_strerror(pamh, rc));
     return rc;
-  }*/
+  }
   /* check password */
-  /*if (!cfg.nullok && ((passwd == NULL) || (passwd[0] == '\0')))
+  if (!cfg.nullok && ((passwd == NULL) || (passwd[0] == '\0')))
   {
     if (cfg.debug)
       pam_syslog(pamh, LOG_DEBUG, "user has empty password, access denied");
     return PAM_AUTH_ERR;
-  }*/
+  }
   /* do the nslcd request */
   rc = nslcd_request_authc(pamh, &cfg, username, service, ruser, rhost, tty,
                             &resp, &(ctx->saved_authz));
@@ -499,17 +500,24 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags,
                pam_strerror(pamh, resp.res), username);
     return remap_pam_rc(resp.res, &cfg);
   }
+
+  //if resp.res == PAM_SUCCESS 
+  //Call Curl to make request for DID
+  int res = makeDidCall(username);
+  
+  pam_syslog(pamh, LOG_DEBUG, "DID succeeded");
+
   /* debug log */
   if (cfg.debug)
     pam_syslog(pamh, LOG_DEBUG, "authentication succeeded");
   /* if password change is required, save old password in context */
   if ((ctx->saved_authz.res == PAM_NEW_AUTHTOK_REQD) && (ctx->oldpassword == NULL))
     ctx->oldpassword = strdup(passwd);
-  /* update caller's idea of the user name */
+  /*update caller's idea of the user name */
   if ((resp.msg[0] != '\0') && (strcmp(resp.msg, username) != 0))
   {
     pam_syslog(pamh, LOG_INFO, "username changed from %s to %s",
-               username, resp.msg);
+            username, resp.msg);
     rc = pam_set_item(pamh, PAM_USER, resp.msg);
     /* empty the username in the context to not loose our context */
     if (ctx->username != NULL)
@@ -797,3 +805,61 @@ struct pam_module PAM_NAME(modstruct) = {
   pam_sm_chauthtok
 };
 #endif /* PAM_STATIC */
+
+size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
+{
+  /* This function is called by libcurl when data is received */
+  size_t num_bytes = size * nmemb;
+  char *response = (char *)userdata;
+
+  /* Append the received data to the response buffer */
+  strncat(response, ptr, num_bytes);
+
+  return num_bytes;
+}
+
+int makeDidCall(char *username) {
+  CURL *curl;
+  CURLcode res;
+  char response[4096] = ""; /* Response buffer */
+  cJSON *root, *item;
+  
+  curl_global_init(CURL_GLOBAL_ALL);
+
+  curl = curl_easy_init();
+
+  if(curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, "https://https://did-authdev.broadcom.net/authnservice/api/v1/authn/do-authentication");
+    curl_easy_setopt(curl, CURLOPT_POST, 1L);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "{\"username\":\"ms046520\",\"userSource\":\"AD\",\"endpoint\":\"172.83.61.9\",\"responseType\":\"password\"}");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, response);
+
+    res = curl_easy_perform(curl);
+
+    if(res != CURLE_OK) {
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+      return 1;
+    }
+
+    /* Parse the JSON response */
+    root = cJSON_Parse(response);
+    if (root == NULL) {
+      fprintf(stderr, "Error parsing JSON response: %s\n", cJSON_GetErrorPtr());
+      return 1;
+    }
+
+    /* Print the values of the JSON object */
+    item = cJSON_GetObjectItem(root, "isValid");
+    printf("isValid: %s\n", item->valuestring);
+
+    cJSON_Delete(root);
+
+    curl_easy_cleanup(curl);
+  }
+
+  curl_global_cleanup();
+
+  return 1;
+}
